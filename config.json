@@ -1,0 +1,48 @@
+{
+  "kalshi": {
+    "base_url": "https://api.elections.kalshi.com/trade-api/v2",
+    "event_url_template": "https://kalshi.com/markets/kx/m/{event_ticker_lower}"
+  },
+  "http": {
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "timeout_seconds": 30,
+    "sleep_between_calls": 0.4
+  },
+  "display": {
+    "timezone": "America/Chicago",
+    "scope_filter": ["Game"],
+    "exclude_competition_keywords": ["Tennis", "French Open", "ATP", "WTA", "ITF", "Wimbledon", "US Open", "Australian Open"],
+    "competition_labels": {
+      "Pro Baseball": "MLB",
+      "Pro Basketball (M)": "NBA",
+      "Pro Basketball (W)": "WNBA",
+      "NHL": "NHL",
+      "Pro Football": "NFL",
+      "College Football": "NCAAF",
+      "College Basketball (M)": "NCAAM",
+      "College Basketball (W)": "NCAAW",
+      "French Open Men Singles": "Tennis (FO Men)",
+      "French Open Women Singles": "Tennis (FO Women)",
+      "ATP": "Tennis (ATP)",
+      "WTA": "Tennis (WTA)",
+      "ITF": "Tennis (ITF)",
+      "EPL": "Soccer (EPL)",
+      "La Liga": "Soccer (La Liga)",
+      "Serie A": "Soccer (Serie A)",
+      "Bundesliga": "Soccer (Bundesliga)",
+      "Ligue 1": "Soccer (Ligue 1)",
+      "MLS": "Soccer (MLS)",
+      "FIFA World Cup": "FIFA World Cup",
+      "UFC": "UFC",
+      "PGA": "Golf (PGA)",
+      "League of Legends": "LoL",
+      "Dota 2": "Dota 2",
+      "Valorant": "Valorant",
+      "CS2": "CS2",
+      "KBO": "KBO",
+      "NPB": "NPB",
+      "AFL": "AFL",
+      "IIHF": "IIHF"
+    }
+  }
+}
