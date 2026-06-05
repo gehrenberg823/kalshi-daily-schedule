@@ -16,20 +16,40 @@ log = logging.getLogger(__name__)
 
 
 def _get(base: str, path: str, params: dict, ua: str, timeout: int) -> dict:
+    # Retry on rate limits (429), transient server errors (5xx), AND network
+    # errors (connection reset/timeout). The Kalshi public API intermittently
+    # resets connections mid-pagination; without retrying those, a single blip
+    # aborts the whole daily run and the schedule silently goes stale.
     backoff = 1.0
-    for attempt in range(5):
-        r = requests.get(
-            f"{base}{path}", params=params, headers={"User-Agent": ua}, timeout=timeout
-        )
-        if r.status_code == 429:
-            log.warning("Rate limited (attempt %d), backing off %.1fs", attempt + 1, backoff)
+    attempts = 5
+    for attempt in range(attempts):
+        try:
+            r = requests.get(
+                f"{base}{path}", params=params, headers={"User-Agent": ua}, timeout=timeout
+            )
+        except requests.exceptions.RequestException as exc:
+            if attempt == attempts - 1:
+                raise
+            log.warning(
+                "Network error on %s (attempt %d/%d): %s; retrying in %.1fs",
+                path, attempt + 1, attempts, exc, backoff,
+            )
+            time.sleep(backoff)
+            backoff *= 2
+            continue
+        if r.status_code == 429 or r.status_code >= 500:
+            if attempt == attempts - 1:
+                r.raise_for_status()
+            log.warning(
+                "HTTP %d on %s (attempt %d/%d), backing off %.1fs",
+                r.status_code, path, attempt + 1, attempts, backoff,
+            )
             time.sleep(backoff)
             backoff *= 2
             continue
         r.raise_for_status()
         return json.loads(r.text, strict=False)
-    r.raise_for_status()
-    return json.loads(r.text, strict=False)
+    raise RuntimeError(f"GET {path} failed after {attempts} attempts")
 
 
 def paginate_events(cfg: dict | None = None) -> list[dict]:
