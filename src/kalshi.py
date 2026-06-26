@@ -20,8 +20,13 @@ def _get(base: str, path: str, params: dict, ua: str, timeout: int) -> dict:
     # errors (connection reset/timeout). The Kalshi public API intermittently
     # resets connections mid-pagination; without retrying those, a single blip
     # aborts the whole daily run and the schedule silently goes stale.
+    # The Kalshi public API rate-limits hard during the early-morning spike
+    # (the 6 AM cron repeatedly died on sustained 429s). Use a generous attempt
+    # budget with capped exponential backoff, and honor a Retry-After header
+    # when the server tells us how long to wait.
     backoff = 1.0
-    attempts = 5
+    max_backoff = 60.0
+    attempts = 8
     for attempt in range(attempts):
         try:
             r = requests.get(
@@ -35,17 +40,24 @@ def _get(base: str, path: str, params: dict, ua: str, timeout: int) -> dict:
                 path, attempt + 1, attempts, exc, backoff,
             )
             time.sleep(backoff)
-            backoff *= 2
+            backoff = min(backoff * 2, max_backoff)
             continue
         if r.status_code == 429 or r.status_code >= 500:
             if attempt == attempts - 1:
                 r.raise_for_status()
+            wait = backoff
+            retry_after = r.headers.get("Retry-After")
+            if retry_after:
+                try:
+                    wait = max(wait, float(retry_after))
+                except ValueError:
+                    pass
             log.warning(
                 "HTTP %d on %s (attempt %d/%d), backing off %.1fs",
-                r.status_code, path, attempt + 1, attempts, backoff,
+                r.status_code, path, attempt + 1, attempts, wait,
             )
-            time.sleep(backoff)
-            backoff *= 2
+            time.sleep(wait)
+            backoff = min(backoff * 2, max_backoff)
             continue
         r.raise_for_status()
         return json.loads(r.text, strict=False)
