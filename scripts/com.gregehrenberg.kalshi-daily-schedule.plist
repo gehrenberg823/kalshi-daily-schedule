@@ -11,11 +11,17 @@
     <string>/Users/gregehrenberg/Kalshi/daily-schedule/scripts/run_daily.sh</string>
   </array>
 
+  <!-- Every 3 hours 6am-9pm: Kalshi lists events (esports especially) during
+       the day; run_daily.sh publishes only when docs/ actually changed. -->
   <key>StartCalendarInterval</key>
-  <dict>
-    <key>Hour</key><integer>6</integer>
-    <key>Minute</key><integer>0</integer>
-  </dict>
+  <array>
+    <dict><key>Hour</key><integer>6</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>12</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>15</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>21</integer><key>Minute</key><integer>0</integer></dict>
+  </array>
 
   <key>StandardOutPath</key>
   <string>/Users/gregehrenberg/Kalshi/daily-schedule/data/logs/launchd.out.log</string>

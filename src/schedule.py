@@ -148,7 +148,7 @@ def discover_events(target_date: date, cfg: dict | None = None) -> list[tuple[di
     exclude_keywords = cfg["display"].get("exclude_competition_keywords", [])
     lookback_days = cfg["display"].get("lookback_days", 2)
     earliest = target_date - timedelta(days=lookback_days)
-    latest = target_date + timedelta(days=1)
+    latest = target_date + timedelta(days=cfg["display"].get("days_ahead", 1))
 
     all_events = kalshi.paginate_events(cfg)
     log.info("Total open events: %d", len(all_events))

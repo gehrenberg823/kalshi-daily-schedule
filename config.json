@@ -10,8 +10,19 @@
   },
   "display": {
     "timezone": "America/Chicago",
-    "scope_filter": ["Game"],
-    "exclude_competition_keywords": ["Tennis", "French Open", "ATP", "WTA", "ITF", "Wimbledon", "US Open", "Australian Open"],
+    "scope_filter": [
+      "Game"
+    ],
+    "exclude_competition_keywords": [
+      "Tennis",
+      "French Open",
+      "ATP",
+      "WTA",
+      "ITF",
+      "Wimbledon",
+      "US Open",
+      "Australian Open"
+    ],
     "competition_labels": {
       "Pro Baseball": "MLB",
       "Pro Basketball (M)": "NBA",
@@ -43,6 +54,7 @@
       "NPB": "NPB",
       "AFL": "AFL",
       "IIHF": "IIHF"
-    }
+    },
+    "days_ahead": 3
   }
 }

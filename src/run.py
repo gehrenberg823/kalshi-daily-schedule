@@ -28,9 +28,9 @@ def main():
     else:
         target = date.today()
 
-    tomorrow = target + timedelta(days=1)
-    log.info("Building schedule for %s and %s", target, tomorrow)
     cfg = load_config()
+    days_ahead = cfg["display"].get("days_ahead", 1)
+    log.info("Building schedule for %s through %s", target, target + timedelta(days=days_ahead))
 
     events_with_dates = discover_events(target, cfg)
     log.info("Found %d events", len(events_with_dates))
@@ -38,7 +38,9 @@ def main():
     rows = build_schedule(events_with_dates, cfg, target_date=target)
     log.info("Schedule has %d rows", len(rows))
 
-    dates = [target.strftime("%b %-d"), tomorrow.strftime("%b %-d")]
+    # key = the join value stored on each row; label adds the weekday for the chip
+    dates = [{"key": d.strftime("%b %-d"), "label": d.strftime("%a %b %-d")}
+             for d in (target + timedelta(days=i) for i in range(days_ahead + 1))]
     out = render(rows, target.isoformat(), dates)
     log.info("Rendered to %s", out)
 

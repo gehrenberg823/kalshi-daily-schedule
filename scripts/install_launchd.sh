@@ -13,5 +13,5 @@ cp "$SRC" "$DEST"
 chmod 644 "$DEST"
 
 launchctl bootstrap "gui/$(id -u)" "$DEST"
-echo "Installed ${PLIST_NAME} — runs daily at 7:00 AM local time."
+echo "Installed ${PLIST_NAME} — runs every 3 hours, 6:00 AM to 9:00 PM local time."
 echo "To test now:  launchctl kickstart gui/$(id -u)/${PLIST_NAME}"

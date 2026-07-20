@@ -47,9 +47,12 @@ _TEMPLATE = r"""<!doctype html>
   .filter-group button.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
   .filter-group button .count { color: #888; font-size: 11px; }
   .filter-group button.active .count { color: #bbb; }
-  .tblwrap { overflow-x: auto; }
+  /* overflow-x only on narrow screens: an overflow ancestor breaks position:sticky */
+  .tblwrap { overflow-x: visible; }
+  @media (max-width: 700px) { .tblwrap { overflow-x: auto; } }
   table.dataTable { background: #fff; }
   table.dataTable th { font-weight: 600; }
+  table.dataTable thead th { position: sticky; top: 0; background: #fafafa; z-index: 5; }
   td.num { text-align: center; font-variant-numeric: tabular-nums; }
   td.time { white-space: nowrap; font-variant-numeric: tabular-nums; }
   td.ticker a { color: #1a6dd4; text-decoration: none; }
@@ -59,6 +62,8 @@ _TEMPLATE = r"""<!doctype html>
   tr.now-divider td { padding: 5px 10px; color: #c2410c; font-weight: 700; font-size: 12px;
     background: #fff7ed; border-top: 2px solid #fb923c; letter-spacing: .04em;
     text-transform: uppercase; opacity: 1; }
+  tr.hr-divider td { padding: 3px 10px; color: #999; font-weight: 600; font-size: 11px;
+    background: #f4f4f5; border-top: 1px solid #e4e4e7; letter-spacing: .04em; }
   .rel { color: #16a34a; font-size: 11px; font-weight: 600; margin-left: 6px; }
   @media (max-width: 640px) { body { margin: 12px; } }
 </style>
@@ -94,7 +99,7 @@ document.getElementById("meta").textContent =
   `Generated: ${DATA.generated_at} · ${DATA.rows.length} events`;
 
 let table;
-let activeDate = DATA.dates[0];
+let activeDate = DATA.dates[0].key;
 let activeLeagues = new Set();   // empty = All
 let autoScrolled = false;
 
@@ -121,13 +126,13 @@ const DATE_COUNTS = DATA.rows.reduce((acc, r) => {
 
 DATA.dates.forEach(d => {
   const b = document.createElement("button");
-  b.innerHTML = `${d} <span class="count">${DATE_COUNTS[d] || 0}</span>`;
-  b.dataset.date = d;
-  if (d === activeDate) b.classList.add("active");
+  b.innerHTML = `${d.label} <span class="count">${DATE_COUNTS[d.key] || 0}</span>`;
+  b.dataset.date = d.key;
+  if (d.key === activeDate) b.classList.add("active");
   b.addEventListener("click", () => {
     document.querySelectorAll("#date-filters button").forEach(x => x.classList.remove("active"));
     b.classList.add("active");
-    activeDate = d;
+    activeDate = d.key;
     applyFilters();
   });
   dateBar.appendChild(b);
@@ -170,21 +175,35 @@ function renderLeagueChips() {
     }));
 }
 
-// --- "now" awareness: dim rows that already started, and (when the visible
-// list is time-sorted and spans the current moment) insert a divider at NOW.
+// --- "now" awareness + hour structure: dim rows that already started, break
+// the list with a light divider whenever the hour changes, and (when the
+// visible list is time-sorted and spans the current moment) a NOW divider.
+const hourLbl = k => new Date(k * 1000).toLocaleTimeString("en-US",
+  { hour: "numeric", timeZone: "America/Chicago" });
 function markNow(api) {
-  document.querySelectorAll("tr.now-divider").forEach(el => el.remove());
+  document.querySelectorAll("tr.now-divider, tr.hr-divider").forEach(el => el.remove());
+  const ord = api.order();
+  const timeAsc = ord.length && ord[0][0] === 4 && ord[0][1] === "asc";
   const now = nowSec();
-  let past = 0, firstFuture = null;
+  let past = 0, firstFuture = null, prevHour = null;
   api.rows({ search: "applied", order: "applied" }).every(function () {
     const d = this.data(), tr = this.node();
     const isPast = d.sort_key && d.sort_key < now;
     tr.classList.toggle("past", !!isPast);
     if (isPast) past++;
     else if (!firstFuture) firstFuture = tr;
+    // hour dividers (skip TBD rows, whose sort_key is a far-future sentinel)
+    if (timeAsc && d.sort_key && d.sort_key < 4e9) {
+      const h = hourLbl(d.sort_key);
+      if (prevHour !== null && h !== prevHour) {
+        const div = document.createElement("tr");
+        div.className = "hr-divider";
+        div.innerHTML = `<td colspan="5">${h}</td>`;
+        tr.parentNode.insertBefore(div, tr);
+      }
+      prevHour = h;
+    }
   });
-  const ord = api.order();
-  const timeAsc = ord.length && ord[0][0] === 4 && ord[0][1] === "asc";
   if (timeAsc && past > 0 && firstFuture) {
     const tr = document.createElement("tr");
     tr.className = "now-divider";
